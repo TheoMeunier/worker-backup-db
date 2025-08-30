@@ -43,14 +43,12 @@ func (s *ServicePostgresqlImpl) BackupPostgreSQL() error {
 
 	dumper := pgdump.NewDumper(psqlInfo, 50)
 
-	// Créer un fichier temporaire
 	currentTime := time.Now()
 	tempFilename := filepath.Join(os.TempDir(), fmt.Sprintf("%s-%s.sql",
 		s.database_name, currentTime.Format("20060102T150405")))
 
 	fmt.Printf("Creating temporary backup file: %s\n", tempFilename)
 
-	// Dump vers le fichier temporaire
 	if err := dumper.DumpDatabase(tempFilename, &pgdump.TableOptions{
 		TableSuffix: "",
 		TablePrefix: "",
@@ -61,7 +59,6 @@ func (s *ServicePostgresqlImpl) BackupPostgreSQL() error {
 
 	defer os.Remove(tempFilename)
 
-	// Lire le fichier
 	fileData, err := os.ReadFile(tempFilename)
 	if err != nil {
 		return fmt.Errorf("error reading backup file: %v", err)
@@ -73,7 +70,6 @@ func (s *ServicePostgresqlImpl) BackupPostgreSQL() error {
 
 	fmt.Printf("Original backup size: %d bytes\n", len(fileData))
 
-	// Compresser avec gzip
 	compressedData, err := utils.CompressGzip(fileData)
 	if err != nil {
 		return fmt.Errorf("error compressing backup: %v", err)
@@ -82,13 +78,11 @@ func (s *ServicePostgresqlImpl) BackupPostgreSQL() error {
 	fmt.Printf("Compressed size: %d bytes (compression: %.1f%%)\n",
 		len(compressedData), float64(len(compressedData))/float64(len(fileData))*100)
 
-	// Créer le service S3
 	s3Service, err := services.NewServiceS3WithR2()
 	if err != nil {
 		return fmt.Errorf("error creating S3 service: %v", err)
 	}
 
-	// Upload la version compressée
 	if err := s3Service.UploadToS3(compressedData, s.database_name); err != nil {
 		return fmt.Errorf("error uploading to S3: %v", err)
 	}
