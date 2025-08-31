@@ -2,7 +2,7 @@ name: Docker build and push
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/backup-db-postgres
+  IMAGE_NAME: ${{ github.repository }}/postgres
 
 on:
   push:
